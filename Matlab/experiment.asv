@@ -1,0 +1,113 @@
+%%
+clear all;close all;
+clc
+%% Params
+ComPort = 3;
+BaudRate = 250000;
+KindMove = 0;
+
+SubjectName = 'Trial_Maan';
+
+Number_Stimulations = 5;
+X_Center = 190; %in absolute coordinate
+Y_Center = 91; %in absolute coordinate
+R_NoStim = 10;% [mm]
+R_Stim = 20; %[mm]
+ISI_Min = 5;
+ISI_Max = 8;
+Zstart = 21;
+Zend = 31;
+Plot = 1;
+backHome = 1;
+
+
+%% added by Joe
+% initalise psychtoolbox
+AssertOpenGL;
+
+screens      = Screen ('Screens');
+screenNumber = max (screens);
+
+white = WhiteIndex (screenNumber);
+black = BlackIndex (screenNumber);
+gray = (white + black)/2;
+
+if round (gray) == white
+    gray = black;
+end
+
+inc = white - gray;
+
+[w, wRect]      = Screen ('OpenWindow', screenNumber, 0, [], 32, 2);
+[width, height] = Screen ('WindowSize', w);
+fix_cord        = [width/2-2 width/2+2];
+
+fprintf ('\n%s%4d', 'screen width:  ', width);
+fprintf ('\n%s%4d', 'screen height: ', height);
+fprintf ('\n');
+
+%
+% Initialise eye-link
+
+
+  if EyelinkInit () ~= 1
+     return;
+   end;
+
+   status = Eyelink ('command', 'link_sample_data = LEFT,RIGHT,GAZE,AREA');
+   if status ~= 0
+   error ('link_sample_data error, status: ', status);
+   end
+
+   [v vs] = Eyelink ('GetTrackerVersion');
+
+   fprintf ('Running experiment on a ''%s'' tracker.\n', vs);
+   el = EyelinkInitDefaults (w);
+
+   edfFile = 'data.edf';
+ 
+   Eyelink ('Openfile', edfFile);
+
+   EyelinkDoTrackerSetup (el);
+
+
+   status = Eyelink ('command', 'link_sample_data = LEFT,RIGHT,GAZE,AREA');
+
+  numFrames = 1; % temporal period, in frames, of the drifting grating
+  Eyelink('Message', 'SYNCTIME'); % 
+
+ % status = Eyelink('Message','testing_session %d', testing_session) %
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% The experiment itself
+
+[robot] = initPinprickRobot(ComPort,BaudRate,KindMove); %initialise  robot/open comms
+
+
+[X_Coord1,Y_Coord1,Z_Coord1] = oneMovePinprickRobot(robot,X_Center,Y_Center,0,2000,2000,2000);
+
+fprintf(robot,'G28');
+pause(5)
+[X_Coord2,Y_Coord2,Z_Coord2] = oneMovePinprickRobot(robot,X_Center,Y_Center,0,2000,2000,2000);
+pause(12)
+[X_Coord,Y_Coord,ISI] = makingTrialsPinprickRobot(robot,Number_Stimulations,X_Center,Y_Center,R_NoStim,R_Stim,ISI_Min,ISI_Max,Zstart,Zend,Plot);
+[sessionName] = stopPinprickRobot(robot,backHome);
+
+%% Save the data related to the stimulation
+save(SubjectName)
